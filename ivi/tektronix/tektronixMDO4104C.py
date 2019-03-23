@@ -26,12 +26,14 @@ THE SOFTWARE.
 
 from .tektronixMDO4000 import *
 from .tektronixMDOAFG import *
+import re
+
 
 class tektronixMDO4104C(tektronixMDO4000, tektronixMDOAFG):
     "Tektronix MDO4104C IVI oscilloscope driver"
 
     def __init__(self, *args, **kwargs):
-        self.__dict__.setdefault('_instrument_id', 'MDO4104C')
+        self.__dict__.setdefault("_instrument_id", "MDO4104C")
 
         super().__init__(*args, **kwargs)
 
@@ -42,5 +44,51 @@ class tektronixMDO4104C(tektronixMDO4000, tektronixMDOAFG):
         # AFG option
         self._output_count = 1
 
+        # Add fetch isf
+        self._add_method(
+            "channels[].measurement.fetch_isf",
+            self._measurement_fetch_isf,
+            ivi.Doc(
+                """
+                        This function calls self._ask_raw(b':WAVFrm?') and format the raw bytearray as
+                        ISF file format, and return the raw byte again.
+                        """
+            ),
+        )
+
         self._init_channels()
         self._init_outputs()
+
+
+    def _measurement_fetch_isf(self, index):
+        index = ivi.get_index(self._channel_name, index)
+
+        if self._driver_operation_simulate:
+            return b""
+
+        self._write(":data:source %s" % self._channel_name[index])
+        self._write(":data:encdg fastest")
+        self._write(":data:width 2")
+        self._write(":data:start 1")
+        self._write(":data:stop 1e10")
+        # eanble verbosity
+        self._write(":HEADer ON")
+        # check if the channel is valid
+        if 'NR_PT' not in self._ask(':WFMOutpre?'):
+            raise Exception(f"Channel {self._channel_name[index]} has no waveform data")
+        # Read whole thing
+        isf_unformatted = b""
+        try:
+            isf_unformatted = self._ask_raw(b":WAVFrm?")
+        except Exception as e:
+            print(e)
+        finally:
+            # reset the verbosity
+            self._write(":HEADer OFF")
+
+        return isf_unformatted
+
+
+    def __del__(self):
+        self.close()
+
