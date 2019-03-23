@@ -50,15 +50,14 @@ class tektronixMDO4104C(tektronixMDO4000, tektronixMDOAFG):
             self._measurement_fetch_isf,
             ivi.Doc(
                 """
-                        This function calls self._ask_raw(b':WAVFrm?') and format the raw bytearray as
-                        ISF file format, and return the raw byte again.
-                        """
+                This function calls self._ask_raw(b':WAVFrm?') and format the raw bytearray as
+                ISF file format, and return the raw byte again.
+                """
             ),
         )
 
         self._init_channels()
         self._init_outputs()
-
 
     def _measurement_fetch_isf(self, index):
         index = ivi.get_index(self._channel_name, index)
@@ -74,7 +73,7 @@ class tektronixMDO4104C(tektronixMDO4000, tektronixMDOAFG):
         # eanble verbosity
         self._write(":HEADer ON")
         # check if the channel is valid
-        if 'NR_PT' not in self._ask(':WFMOutpre?'):
+        if "NR_PT" not in self._ask(":WFMOutpre?"):
             raise Exception(f"Channel {self._channel_name[index]} has no waveform data")
         # Read whole thing
         isf_unformatted = b""
@@ -87,7 +86,6 @@ class tektronixMDO4104C(tektronixMDO4000, tektronixMDOAFG):
             self._write(":HEADer OFF")
 
         return isf_unformatted
-
 
     def __del__(self):
         self.close()
