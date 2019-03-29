@@ -70,10 +70,10 @@ class tektronixMDO4104C(tektronixMDO4000, tektronixMDOAFG):
         self._write(":data:width 2")
         self._write(":data:start 1")
         self._write(":data:stop 1e10")
-        # eanble verbosity
+        self._write(":VERBose ON")
         self._write(":HEADer ON")
         # check if the channel is valid
-        if "NR_PT" not in self._ask(":WFMOutpre?"):
+        if "NR_P" not in self._ask(":WFMOutpre?"):
             raise Exception(f"Channel {self._channel_name[index]} has no waveform data")
         # Read whole thing
         isf_unformatted = b""
@@ -83,6 +83,7 @@ class tektronixMDO4104C(tektronixMDO4000, tektronixMDOAFG):
             print(e)
         finally:
             # reset the verbosity
+            self._write(":VERBose OFF")
             self._write(":HEADer OFF")
 
         return isf_unformatted
